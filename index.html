@@ -13,7 +13,7 @@ box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:en
 :root[data-theme="dark"]{--map:#10171c;--panel:#182027;--ink:#e8eef2;--mute:#93a3af;--line:#2b3943;--chip:#1f2a33;--drink:#6ea2f5;--c0:#a78bfa;--c1:#3cc4d9;--c2:#fb9a3c;--c3:#5fd078;--c4:#ff6b9d;--c5:#aab6c0}
 html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box}
-body{height:100%;margin:0;background:var(--panel);color:var(--ink);font:400 15px/1.4 "Schibsted Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;font-variant-numeric:tabular-nums}
+body{height:100%;margin:0;background:var(--panel);color:var(--ink);font:400 15px/1.4 "Schibsted Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif}
 .app{height:100%;display:grid;grid-template-rows:minmax(240px,46%) 1fr}
 @media (min-width:860px){.app{grid-template-rows:none;grid-template-columns:1fr 420px}}
 .mapwrap{position:relative;background:var(--map);overflow:hidden;min-height:0}
@@ -52,6 +52,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
 .card .nm{display:block;font-weight:700;font-size:16px;line-height:1.2}
 .card .crs{display:block;font-size:12px;color:var(--mute);margin-bottom:6px}
 .card .km{font-size:24px;font-weight:700;line-height:1.1}
+.card .net{font-size:13px;color:var(--mute);margin-bottom:2px}
 .card .st{font-size:13px;min-height:36px;margin:2px 0}
 .card a{font-size:13px;color:var(--ink)}
 .card.off{opacity:.55}
@@ -70,6 +71,15 @@ input[aria-invalid=true]{border-color:var(--c4)}
 .chip[aria-pressed=true]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
 .note{font-size:13px;color:var(--mute);margin:6px 0}
 .credit{font-size:12px;color:var(--mute);margin:18px 0 0;padding-top:12px;border-top:1px solid var(--line)}
+input[type=checkbox]{width:auto;margin:0}
+.big,td,.card .km,.card .net,input{font-variant-numeric:tabular-nums}
+.stop{border-left:4px solid var(--mute);padding:2px 0 2px 10px;margin:10px 0;font-size:13px}
+.stop .ok{color:var(--c3)}.stop .warn{color:var(--c2)}.stop .bad{color:var(--c4);font-weight:600}
+.spn{margin:10px 0 4px}.sg{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink);margin:3px 0}
+.toast{position:absolute;top:10px;left:10px;z-index:3;max-width:calc(100% - 130px);background:var(--chip);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:13px}.toast[hidden]{display:none}
+.zoom button[aria-pressed=true]{background:var(--ink);color:var(--panel)}
+#now[aria-pressed=true]{background:var(--c4);color:#fff;border-color:var(--c4)}
+button:disabled,select:disabled{opacity:.5;cursor:default}
 .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
 table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
 th{text-align:left;font-weight:600;color:var(--mute);padding:4px}
@@ -83,15 +93,16 @@ tr.k5 td:first-child{font-weight:700}
 <main class="app">
  <div class="mapwrap" id="mw">
   <div id="gl"></div><canvas id="cv" aria-label="Course map with runner positions"></canvas>
-  <div class="zoom"><button id="zi" aria-label="Zoom in">+</button><button id="zo" aria-label="Zoom out">&minus;</button><button id="zf" aria-label="Fit whole course" style="font-size:12px">Fit</button><button id="zb" aria-label="Change basemap" aria-haspopup="true" aria-expanded="false" style="font-size:12px">Map</button></div>
+  <div class="zoom"><button id="zi" aria-label="Zoom in">+</button><button id="zo" aria-label="Zoom out">&minus;</button><button id="zf" aria-label="Fit whole course" style="font-size:12px">Fit</button><button id="zb" aria-label="Change basemap" aria-haspopup="true" aria-expanded="false" style="font-size:12px">Map</button><button id="zg" aria-pressed="false" aria-label="Show my location" style="font-size:12px">GPS</button></div>
   <div class="spot" id="spot" hidden></div>
   <div class="bm" id="bm" role="menu" hidden></div>
+  <div class="toast" id="toast" hidden></div>
   <div class="attr" id="attr" hidden><a target="_blank" rel="noopener"></a></div>
  </div>
  <aside class="panel">
-  <h1>Sunday 11 October, Melbourne time</h1>
+  <h1 id="dt">Sunday 11 October, Melbourne time</h1>
   <div class="big" id="clk">-</div>
-  <div class="ctrl"><button id="play">Play</button><label style="display:flex;align-items:center;gap:6px">Speed<select id="speed" style="width:auto;margin:0"><option value="30">30x</option><option value="60">60x</option><option value="120" selected>120x</option><option value="300">300x</option><option value="600">600x</option></select></label></div>
+  <div class="ctrl"><button id="play">Play</button><label style="display:flex;align-items:center;gap:6px">Speed<select id="speed" style="width:auto;margin:0"><option value="30">30x</option><option value="60">60x</option><option value="120" selected>120x</option><option value="300">300x</option><option value="600">600x</option><option value="1600">1600x</option></select></label><button id="now" aria-pressed="false" style="margin-left:auto">Now</button></div>
   <input type="range" id="tm" aria-label="Time of day">
   <div class="cards" id="cards"></div>
   <p class="cap">Elevation along the course (metres)</p>
@@ -111,11 +122,21 @@ tr.k5 td:first-child{font-weight:700}
    <label>How the pace changes
     <select id="shape"><option value="0">Flat: same pace every km (ignores starting pace)</option><option value="0.3">Very early: almost all the change in the first few km</option><option value="0.6">Early: quicker change in the first half</option><option value="1">Even: steady change every km</option><option value="1.8">Late: most of the change near the end</option><option value="4">Very late: pace only changes in the last few km</option></select></label>
    <p class="note" id="planOut"></p>
+   <label>After a correction, assume<select id="pj"><option value="carry">Planned pace from there (the delay stays)</option><option value="recent">The pace so far continues</option><option value="target">They catch up to the finish time</option></select></label>
+   <div class="note" id="anchors"></div>
    <div class="btns"><button id="reset">Reset plan</button><button id="rm">Remove runner</button><button id="share">Copy share link</button><button id="rall">Reset everything</button></div>
   </details>
   <details><summary id="splitsT">Km splits</summary>
    <p class="note">Edit any km pace (m:ss) to override it. Finish time updates to match.</p>
    <table><thead><tr><th>Km</th><th>Pace</th><th></th><th>Elapsed</th><th>Clock</th></tr></thead><tbody id="sb"></tbody></table>
+  </details>
+  <details><summary>Spectator planner</summary>
+   <p class="note">Save pins on the map, then tick the times you want to catch. Travel times are estimates from straight-line distance, not real routes.</p>
+   <div class="row"><label>Getting around<select id="pm"><option value="walk">Walking</option><option value="bike">Cycling</option><option value="car">Driving</option></select></label>
+    <label>Arrive early (min)<input type="text" id="ea" inputmode="numeric"></label></div>
+   <label class="sg"><input type="checkbox" id="fm"> Start from my location (needs GPS)</label>
+   <div id="sp-list"></div>
+   <div id="sp-out"></div>
   </details>
   <details><summary>Add a runner</summary>
    <div class="row"><label>Name<input type="text" id="an" placeholder="Runner name"></label>
@@ -134,9 +155,12 @@ const $=s=>document.querySelector(s);
 const fT=new Intl.DateTimeFormat('en-AU',{timeZone:'Australia/Melbourne',hour:'numeric',minute:'2-digit',second:'2-digit',hour12:true});
 const f24=new Intl.DateTimeFormat('en-GB',{timeZone:'Australia/Melbourne',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'});
 const clock=t=>fT.format(new Date(t*1000)),short=t=>clock(t).replace(/:\d\d /,' ');
+const fW=new Intl.DateTimeFormat('en-AU',{timeZone:'Australia/Melbourne',weekday:'long',day:'numeric',month:'long'});
+const dayOf=t=>{const p={};for(const x of fW.formatToParts(new Date(t*1000)))p[x.type]=x.value;return p.weekday+' '+p.day+' '+p.month};
 const pad=n=>String(n).padStart(2,'0');
 const hms=s=>{s=Math.round(s);const h=Math.floor(s/3600),m=Math.floor(s%3600/60);return(h?h+':'+pad(m):m)+':'+pad(s%60)};
 const mss=s=>{s=Math.round(s);return Math.floor(s/60)+':'+pad(s%60)};
+const net=s=>{s=Math.floor(s);return Math.floor(s/3600)+':'+pad(Math.floor(s%3600/60))+':'+pad(s%60)};
 const parseClock=s=>{const m=/^(\d\d):(\d\d)(?::(\d\d))?$/.exec(s||'');return m?Date.parse(`2026-10-11T${m[1]}:${m[2]}:${m[3]||'00'}+11:00`)/1000:null};
 const parsePace=s=>{const m=/^(\d{1,2}):([0-5]\d)$/.exec(s.trim());return m?+m[1]*60+ +m[2]:null};
 const parseFin=s=>{const m=/^(\d{1,2}):([0-5]\d):([0-5]\d)$/.exec(s.trim());return m?+m[1]*3600+ +m[2]*60+ +m[3]:null};
@@ -175,9 +199,9 @@ function setSpec(u,spec){
 function computeT(u){
  const c=C[u.course],K=u.paces.length,cum=[0];
  for(let k=0;k<K;k++){const a=k*1000,b=Math.min(a+1000,c.L);cum.push(cum[k]+u.paces[k]*(b-a)/1000)}
- u.T=new Array(c.n);
- for(let i=0;i<c.n;i++){const d=i*c.step,k=Math.min(K-1,Math.floor(d/1000));u.T[i]=u.start+cum[k]+u.paces[k]*(d-k*1000)/1000}
- u.total=cum[K]}
+ u.Tb=new Array(c.n);
+ for(let i=0;i<c.n;i++){const d=i*c.step,k=Math.min(K-1,Math.floor(d/1000));u.Tb[i]=u.start+cum[k]+u.paces[k]*(d-k*1000)/1000}
+ u.T=u.Tb.slice();warp(u);u.total=u.T[c.n-1]-u.start}
 function addRun(o){
  const used=RUN.map(u=>u.ci);let ci=0;while(used.includes(ci))ci++;
  const u={id:nid++,name:o.name,course:o.course,start:o.start,ci:ci%6,def:o.spec};
@@ -190,7 +214,7 @@ function at(u,t){
  if(t<=Tt[0]){i=0;st='pre'}else if(t>=Tt[n-1]){i=n-1;st='done'}
  else{let lo=0,hi=n-1;while(hi-lo>1){const m=(lo+hi)>>1;Tt[m]<=t?lo=m:hi=m}i=lo;f=(t-Tt[lo])/((Tt[hi]-Tt[lo])||1)}
  const j=Math.min(n-1,i+1),l=a=>a[i]+(a[j]-a[i])*f,km=(i+f)*c.step/1000;
- return{st,x:l(c.X),y:l(c.Y),e:l(c.E),km,pace:u.paces[Math.min(u.paces.length-1,Math.floor(km))]}}
+ return{st,x:l(c.X),y:l(c.Y),e:l(c.E),km,pace:(Tt[Math.min(n-1,i+15)]-Tt[Math.max(0,i-15)])/((Math.min(n-1,i+15)-Math.max(0,i-15))*c.step)*1000}}
 
 /* map view */
 const cv=$('#cv'),ctx=cv.getContext('2d'),mw=$('#mw');let W=1,H=1,dpr=1,V={cx:0,cy:0,s:.05},playing=false,spot=null,raf=0,lastTs=0;
@@ -268,9 +292,11 @@ function draw(){
  tag('Start',sx(C.full.X[0]),sy(C.full.Y[0])+18,g('--ink'));tag('Finish',sx(C.half.X[C.half.n-1]),sy(C.half.Y[C.half.n-1])+18,g('--ink'));
  if(spot){const x=sx(spot.x),y=sy(spot.y);ctx.setLineDash([5,4]);ctx.strokeStyle=g('--ink');ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(x,y,Math.max(4,spot.R*V.s),0,7);ctx.stroke();ctx.setLineDash([]);
   ctx.fillStyle=g('--ink');ctx.beginPath();ctx.arc(x,y,3,0,7);ctx.fill()}
- for(const pn of PINS){const x=sx(pn.x),y=sy(pn.y);ctx.fillStyle=g('--chip');ctx.strokeStyle=g('--ink');ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(x,y,13,0,7);ctx.fill();ctx.stroke();
+ PINS.forEach((pn,pidx)=>{const x=sx(pn.x),y=sy(pn.y);ctx.fillStyle=g('--chip');ctx.strokeStyle=g('--ink');ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(x,y,13,0,7);ctx.fill();ctx.stroke();
   ctx.font='15px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=g('--ink');ctx.fillText((ICONS[pn.ic]||ICONS.pin).e,x,y+1);
-  if(pn.label)tag(pn.label,x,y+27,g('--ink'))}
+  if(pn.label)tag(pn.label,x,y+27,g('--ink'));if(planBadges[pidx])tag(planBadges[pidx],x+15,y-15,g('--ink'))});
+ if(me){const x=sx(me.x),y=sy(me.y);ctx.fillStyle=g('--drink');ctx.globalAlpha=.15;ctx.beginPath();ctx.arc(x,y,Math.max(8,Math.min(me.acc*V.s,200)),0,7);ctx.fill();ctx.globalAlpha=1;
+  ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.beginPath();ctx.arc(x,y,7,0,7);ctx.fill();ctx.stroke();tag('You are here',x,y-20,g('--drink'))}
  pos.forEach(({u,p},n)=>{const x=sx(p.x),y=sy(p.y),c=g(colOf(u));ctx.lineWidth=3;ctx.strokeStyle='#fff';ctx.fillStyle=p.st==='pre'?g('--chip'):c;
   ctx.beginPath();ctx.arc(x,y,8,0,7);ctx.fill();ctx.stroke();if(p.st==='pre'){ctx.strokeStyle=c;ctx.lineWidth=2;ctx.stroke()}
   tag(u.name,x,y-20-(n%3)*20,c)})}
@@ -304,7 +330,7 @@ function drawElev(){
   ex.fillText(u.name,tx,Math.max(11,y-8-(r%3)*12))})}
 
 /* panel */
-function renderCards(){$('#cards').innerHTML=RUN.map(u=>`<div class="card${u.hidden?' off':''}" id="c-${u.id}" style="--c:var(${colOf(u)})"><button class="vis" data-id="${u.id}" aria-pressed="${!u.hidden}">${u.hidden?'Show':'Hide'}</button><span class="nm"></span><span class="crs">${CN[u.course]}</span><div class="km"></div><div class="st"></div><a target="_blank" rel="noopener">Open spot in Maps</a></div>`).join('');
+function renderCards(){$('#cards').innerHTML=RUN.map(u=>`<div class="card${u.hidden?' off':''}" id="c-${u.id}" style="--c:var(${colOf(u)})"><button class="vis" data-id="${u.id}" aria-pressed="${!u.hidden}">${u.hidden?'Show':'Hide'}</button><span class="nm"></span><span class="crs">${CN[u.course]}</span><div class="km"></div><div class="net"></div><div class="st"></div><a target="_blank" rel="noopener">Open spot in Maps</a></div>`).join('');
  RUN.forEach(u=>$(`#c-${u.id} .nm`).textContent=u.name)}
 function renderChips(){const el=$('#chips');el.innerHTML=RUN.map((u,i)=>`<button class="chip" aria-pressed="${i===sel}" data-i="${i}"><span class="dot" style="--c:var(${colOf(u)})"></span><span></span></button>`).join('');
  RUN.forEach((u,i)=>el.children[i].lastChild.textContent=u.name)}
@@ -316,23 +342,24 @@ function planMsg(extra){const u=cur(),K=u.paces.length;
 function loadEditor(){const u=cur();$('#nm').value=u.name;$('#rc').value=u.course;$('#st').value=f24.format(new Date(u.start*1000));
  $('#p0').value=mss(u.ui.p0);$('#fin').value=hms(u.ui.fin).replace(/^(\d+:\d\d)$/,'0:$1');$('#shape').value=String(u.ui.k);$('#p0').disabled=u.ui.k===0;
  $('#p0').removeAttribute('aria-invalid');$('#fin').removeAttribute('aria-invalid');
- $('#rm').disabled=RUN.length<2;$('#splitsT').textContent='Km splits for '+u.name;planMsg()}
+ $('#rm').disabled=RUN.length<2;$('#splitsT').textContent='Km splits for '+u.name;planMsg();renderAnchors();$('#pj').value=u.pj||'carry'}
 function renderSplits(){const u=cur(),c=C[u.course],K=u.paces.length;
  $('#sb').style.setProperty('--bc',`var(${colOf(u)})`);
  $('#sb').innerHTML=u.paces.map((p,k)=>`<tr class="${(k+1)%5===0?'k5':''}"><td>${k===K-1&&c.L%1000?'Finish':k+1}</td><td><input class="pi" data-k="${k}" value="${mss(p)}" inputmode="numeric" aria-label="Pace for km ${k+1}"></td><td style="width:18%"><i class="bar"></i></td><td class="el"></td><td class="ck"></td></tr>`).join('');
  refreshCells()}
 function refreshCells(){const u=cur(),c=C[u.course],rows=$('#sb').children,mn=Math.min(...u.paces),mx=Math.max(...u.paces);let el=0;
- u.paces.forEach((p,k)=>{const a=k*1000,b=Math.min(a+1000,c.L);el+=p*(b-a)/1000;const r=rows[k];
+ u.paces.forEach((p,k)=>{const a=k*1000,b=Math.min(a+1000,c.L);el=u.T[Math.min(c.n-1,Math.round(b/c.step))]-u.start;const r=rows[k];
   r.querySelector('.bar').style.width=(30+70*(p-mn)/((mx-mn)||1))+'%';r.querySelector('.el').textContent=hms(el);r.querySelector('.ck').textContent=short(u.start+el)})}
 function rebuild(){
  t0=Math.floor((Math.min(...RUN.map(u=>u.start))-600)/300)*300;t1=Math.ceil((Math.max(...RUN.map(lastT))+600)/300)*300;
  const tm=$('#tm');tm.min=t0;tm.max=t1;tm.step=1;T=Math.min(Math.max(T,t0),t1)}
 function refreshAll(){rebuild();renderCards();renderChips();loadEditor();renderSplits();update();syncURL()}
 function update(){
- $('#clk').textContent=clock(T);$('#tm').value=T;
+ $('#clk').textContent=clock(T);$('#dt').textContent=dayOf(T)+', Melbourne time';$('#tm').value=T;
  for(const u of RUN){const p=at(u,T),e=$('#c-'+u.id);if(!e)continue;
   e.querySelector('.km').textContent='km '+p.km.toFixed(1);
-  e.querySelector('.st').textContent=p.st==='pre'?'Starts at '+short(u.T[0])+', in '+hms(u.T[0]-T):p.st==='done'?'Finished at '+clock(lastT(u)):mss(p.pace)+' /km right now';
+  e.querySelector('.net').textContent='Net '+net(Math.max(0,Math.min(T,lastT(u))-u.T[0]));
+  e.querySelector('.st').textContent=p.st==='pre'?'Starts at '+short(u.T[0])+(dayOf(u.T[0])!==dayOf(T)?' on '+dayOf(u.T[0]):'')+', in '+hms(u.T[0]-T):p.st==='done'?'Finished at '+clock(lastT(u)):mss(p.pace)+' /km right now';
   const ll=unproj(p.x,p.y);e.querySelector('a').href=`https://www.google.com/maps/search/?api=1&query=${ll[0].toFixed(5)},${ll[1].toFixed(5)}`}
  drawElev();req()}
 
@@ -347,7 +374,7 @@ function readPlan(){const u=cur(),a=parsePace($('#p0').value),b=parseFin($('#fin
  if(!setSpec(u,{kind:'plan',p0:a,fin:b,k:+$('#shape').value})){planMsg('That finish time is not reachable from this starting pace.');return}
  rebuild();planMsg();renderSplits();update();syncURL()}
 for(const id of['#p0','#fin','#shape'])$(id).addEventListener('input',readPlan);
-$('#reset').onclick=()=>{const u=cur();setSpec(u,u.def);rebuild();loadEditor();renderSplits();update();syncURL()};
+$('#reset').onclick=()=>{const u=cur();u.anch=[];u.pj='carry';setSpec(u,u.def);rebuild();loadEditor();renderSplits();update();syncURL()};
 $('#rm').onclick=()=>{if(RUN.length<2)return;RUN.splice(sel,1);sel=0;refreshAll()};
 $('#sb').addEventListener('change',e=>{const i=e.target.closest('.pi');if(!i)return;const u=cur(),k=+i.dataset.k,p=parsePace(i.value);
  if(p===null||p<120||p>1200){i.setAttribute('aria-invalid','true');i.value=mss(u.paces[k]);return}
@@ -366,17 +393,19 @@ function setSpot(x,y,pi=-1){
  for(const u of RUN.filter(u=>!u.hidden)){const c=C[u.course],gs=[];let q=null;
   for(let i=0;i<c.n;i++){const d=Math.hypot(c.X[i]-x,c.Y[i]-y);
    if(d<R){if(!q)q={a:i,b:i,best:i,bd:d};else{q.b=i;if(d<q.bd){q.bd=d;q.best=i}}}else if(q){gs.push(q);q=null}}
-  if(q)gs.push(q);
+  if(q)gs.push(q);spotPasses[u.id]=gs.map(g2=>({d:g2.best*c.step,t:u.T[g2.best]}));
   h+=`<div><span class="dot" style="--c:var(${colOf(u)})"></span><b class="nmx"></b></div><ul>`+(gs.length?gs.map(q=>`<li><button data-t="${u.T[q.best]}">${clock(u.T[q.best])}</button> at km ${(q.best*c.step/1000).toFixed(1)}, in range ${short(u.T[q.a])} to ${short(u.T[q.b])}</li>`).join(''):'<li>Not on this route</li>')+'</ul>'}
- h+=pinForm(pi);
+ h+=corrForm();h+=youLine(x,y);h+=pinForm(pi);
  h+=`<a href="https://www.google.com/maps/search/?api=1&query=${ll[0].toFixed(5)},${ll[1].toFixed(5)}" target="_blank" rel="noopener">Open pin in Maps</a>`;
  const s=$('#spot');s.innerHTML=h;s.hidden=false;[...s.querySelectorAll('.nmx')].forEach((el,i)=>el.textContent=RUN.filter(u=>!u.hidden)[i].name);if(pi>=0)$('#pl').value=PINS[pi].label;req()}
 $('#spot').addEventListener('click',e=>{if(e.target.id==='sx'){spot=null;$('#spot').hidden=true;req()}
+ if(e.target.id==='cr-b'){const u=RUN.find(r=>r.id===+$('#cr-u').value),tt=parseClock($('#cr-t').value),ps=u?spotPasses[u.id]||[]:[];
+  if(u&&tt!==null&&ps.length){const p=ps.reduce((a,b)=>Math.abs(b.t-tt)<Math.abs(a.t-tt)?b:a);if(addAnchor(u,p.d,tt)){sel=RUN.indexOf(u);afterCorrection()}}}
  if(e.target.id==='ps'){const ic=$('#pi').value,label=$('#pl').value.trim();
   if(spot.pi>=0)Object.assign(PINS[spot.pi],{ic,label});
   else{const ll=unproj(spot.x,spot.y).map(v=>+v.toFixed(5)),xy=proj(ll);PINS.push({x:xy[0],y:xy[1],ic,label});spot.pi=PINS.length-1}
   syncURL();setSpot(PINS[spot.pi].x,PINS[spot.pi].y,spot.pi)}
- if(e.target.id==='pd'){PINS.splice(spot.pi,1);syncURL();spot=null;$('#spot').hidden=true;req()}const t=e.target.dataset.t;if(t){T=+t;update();syncURL()}});
+ if(e.target.id==='pd'){const dp=spot.pi;SEL=SEL.filter(k=>+k.split('.')[0]!==dp).map(k=>{const a=k.split('.');if(+a[0]>dp)a[0]=a[0]-1;return a.join('.')});PINS.splice(dp,1);syncURL();spot=null;$('#spot').hidden=true;req()}const t=e.target.dataset.t;if(t){T=+t;update();syncURL()}});
 
 /* map gestures */
 const ptrs=new Map();let moved=0;
@@ -413,6 +442,84 @@ const DEF=[
  {id:2,ci:2,name:'Eluid',course:'full',start:parseClock('06:15:00'),spec:{kind:'plan',p0:7800/(C.full.L/1000),fin:7800,k:1}}];
 const DT=parseClock('06:45:00');
 const PINS=[];
+let SEL=[],PM='walk',EA=5,FROMME=false,live=false,bootLive=false,planBadges={},me=null,watchId=null,liveTimer=0;
+const SPD={walk:5/3.6,bike:15/3.6,car:30/3.6};
+let spotPasses={};
+/* corrections: anchors (distance, actual time) warp the planned timeline */
+function warp(u){const A=(u.anch||[]).slice().sort((a,b)=>a.d-b.d);if(!A.length)return;
+ const c=C[u.course],Tb=u.Tb,n=c.n,st=c.step;
+ const tb=d=>{const f=d/st,i=Math.min(n-2,Math.floor(f));return Tb[i]+(Tb[i+1]-Tb[i])*(f-i)};
+ const P=[{d:0,t:u.start,b:Tb[0]},...A.map(a=>({d:a.d,t:a.t,b:tb(a.d)}))],last=P[P.length-1],rem=Tb[n-1]-last.b,mode=u.pj||'carry';
+ let rE=1;
+ if(mode==='recent'){const p=P[P.length-2];if(last.b-p.b>1)rE=(last.t-p.t)/(last.b-p.b)}
+ else if(mode==='target'&&rem>1)rE=(u.start+u.ui.fin-last.t)/rem;
+ rE=Math.min(2,Math.max(.5,rE));let j=0;
+ for(let i=0;i<n;i++){const d=i*st;while(j<P.length-1&&d>P[j+1].d)j++;const p=P[j],q=P[j+1];
+  if(!q)u.T[i]=p.t+(Tb[i]-p.b)*rE;
+  else if(q.b-p.b>.01)u.T[i]=p.t+(Tb[i]-p.b)*(q.t-p.t)/(q.b-p.b);
+  else u.T[i]=p.t+(Tb[i]-p.b)}}
+function addAnchor(u,d,tObs){const c=C[u.course],t=Math.round(tObs);
+ const tb=dd=>{const f=dd/c.step,i=Math.min(c.n-2,Math.floor(f));return u.Tb[i]+(u.Tb[i+1]-u.Tb[i])*(f-i)};
+ const diff=t-tb(d),sign=diff>0?' behind':' ahead of';
+ if(d<1000){u.start+=diff;computeT(u);toast(u.name+' start moved by '+(diff<0?'-':'+')+hms(Math.abs(diff))+', now '+clock(u.start)+'.');return true}
+ if(d>c.L-60)d=c.L;
+ const next=[...(u.anch||[]).filter(a=>Math.abs(a.d-d)>=400),{d,t}].sort((a,b)=>a.d-b.d);
+ let ok=next[0].t>u.start;for(let k=1;k<next.length;k++)ok=ok&&next[k].t>next[k-1].t+1;
+ if(!ok){toast('That time conflicts with the start time or another correction.');return false}
+ u.anch=next;computeT(u);toast(u.name+' is '+hms(Math.abs(diff))+sign+' plan here. Projection updated.');return true}
+function renderAnchors(){const u=cur(),A=(u.anch||[]).slice().sort((a,b)=>a.d-b.d),el=$('#anchors'),c=C[u.course];
+ if(!A.length){el.textContent='No corrections yet. Tap the map where this runner was seen, then use Update runner position.';return}
+ el.innerHTML='<b>Corrections</b>'+A.map(a=>{const f=a.d/c.step,i=Math.min(c.n-2,Math.floor(f)),b=u.Tb[i]+(u.Tb[i+1]-u.Tb[i])*(f-i),df=a.t-b;
+  return '<div class="sg">km '+(a.d/1000).toFixed(1)+' at '+clock(a.t)+', '+hms(Math.abs(df))+(df>0?' behind':' ahead')+' <button data-t="'+Math.round(a.t)+'" data-d="'+Math.round(a.d)+'">Remove</button></div>'}).join('')}
+function corrForm(){const us=RUN.filter(u=>!u.hidden&&(spotPasses[u.id]||[]).length);if(!us.length)return '';
+ return '<p style="margin:8px 0 2px">Update runner position</p><div class="pf"><select id="cr-u" aria-label="Runner">'+us.map(u=>'<option value="'+u.id+'">'+esc(u.name)+'</option>').join('')+'</select><input type="time" step="1" id="cr-t" aria-label="Time seen" value="'+f24.format(new Date(T*1000))+'"><button id="cr-b">Seen here</button></div>'}
+function afterCorrection(){rebuild();renderChips();loadEditor();renderSplits();update();syncURL();if(spot)setSpot(spot.x,spot.y,spot.pi)}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
+function toast(m){const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>{t.hidden=true},4500)}
+function setGPS(on){const b=$('#zg');
+ if(!on){if(watchId!==null&&navigator.geolocation)navigator.geolocation.clearWatch(watchId);watchId=null;me=null;b.setAttribute('aria-pressed','false');req();renderPlanner();return}
+ if(!navigator.geolocation){toast('Location is not available in this browser.');return}
+ b.setAttribute('aria-pressed','true');let first=true;
+ watchId=navigator.geolocation.watchPosition(p=>{const xy=proj([p.coords.latitude,p.coords.longitude]);me={x:xy[0],y:xy[1],acc:p.coords.accuracy};
+  if(first){first=false;if(Math.hypot(xy[0]-V.cx,xy[1]-V.cy)<20000){V.cx=xy[0];V.cy=xy[1];V.s=Math.max(V.s,.2)}else toast('You are far from the course.')}
+  req();renderPlanner()},
+  err=>{toast(err.code===1?'Location permission was denied.':'Could not get your location.');setGPS(false)},{enableHighAccuracy:true,maximumAge:5000,timeout:20000})}
+function setLive(on){live=on;clearInterval(liveTimer);
+ $('#now').setAttribute('aria-pressed',String(on));for(const id of['#play','#speed','#tm'])$(id).disabled=on;
+ if(on){setPlay(false);const f=()=>{T=Date.now()/1000;update()};f();liveTimer=setInterval(f,500)}
+ else{T=Math.min(Math.max(T,t0),t1);update()}
+ syncURL()}
+function legSec(a,b){return Math.hypot(a.x-b.x,a.y-b.y)*1.3/SPD[PM]+(PM==='car'?180:0)}
+function youLine(x,y){if(!me)return '';const d=Math.hypot(me.x-x,me.y-y)*1.3;
+ return '<p class="note" style="margin:4px 0;font-weight:400">You are about '+(d<1000?Math.round(d/10)*10+' m':(d/1000).toFixed(1)+' km')+' away, '+Math.max(1,Math.round(d/SPD[PM]/60))+' min '+({walk:'on foot',bike:'by bike',car:'by car'})[PM]+'.</p>'}
+function sightingsFor(pi){const pn=PINS[pi],out=[];
+ for(const u of RUN.filter(r=>!r.hidden)){const c=C[u.course];let q=null,k=0;
+  const flush=()=>{if(q){out.push({pi,u,k:k++,t:u.T[q.best],km:q.best*c.step/1000});q=null}};
+  for(let i=0;i<c.n;i++){const d=Math.hypot(c.X[i]-pn.x,c.Y[i]-pn.y);
+   if(d<50){if(!q)q={best:i,bd:d};else if(d<q.bd){q.bd=d;q.best=i}}else flush()}
+  flush()}
+ return out.sort((a,b)=>a.t-b.t)}
+function renderPlanner(){
+ const L=$('#sp-list'),O=$('#sp-out');planBadges={};
+ if(!PINS.length){L.innerHTML='<p class="note">No pins yet. Tap the map and choose Save pin where you plan to stand.</p>';O.innerHTML='';req();return}
+ const all=PINS.map((p,i)=>sightingsFor(i)),key=s=>s.pi+'.'+s.u.id+'.'+s.k;
+ L.innerHTML=PINS.map((pn,i)=>'<div class="spn"><b>'+ICONS[pn.ic].e+' '+esc(pn.label||'Pin '+(i+1))+'</b>'+(all[i].length?all[i].map(s=>'<label class="sg"><input type="checkbox" data-k="'+key(s)+'"'+(SEL.includes(key(s))?' checked':'')+'><span class="dot" style="--c:var(--c'+s.u.ci+')"></span>'+esc(s.u.name)+' '+clock(s.t)+', km '+s.km.toFixed(1)+'</label>').join(''):'<div class="note">No visible runner passes here.</div>')+'</div>').join('');
+ const sel=[];all.forEach(ss=>ss.forEach(s=>{if(SEL.includes(key(s)))sel.push(s)}));sel.sort((a,b)=>a.t-b.t);
+ const stops=[];for(const s of sel){const l=stops[stops.length-1];if(l&&l.pi===s.pi&&s.t-l.last<=600){l.s.push(s);l.last=s.t}else stops.push({pi:s.pi,s:[s],first:s.t,last:s.t})}
+ const mw={walk:'on foot',bike:'by bike',car:'by car'}[PM];let h='';
+ if(!stops.length)h='<p class="note">Tick the times above to build a schedule.</p>';
+ if(FROMME&&!me)h+='<p class="note">Turn on GPS (the GPS button on the map) to plan from your location.</p>';
+ stops.forEach((st,i)=>{const pn=PINS[st.pi],by=st.first-EA*60;let msg='',cls='ok';
+  planBadges[st.pi]=(planBadges[st.pi]?planBadges[st.pi]+', ':'')+(i+1);
+  const from=i?PINS[stops[i-1].pi]:(FROMME&&me?me:null),free=i?stops[i-1].last+60:0;
+  if(from){const tr=legSec(from,pn),mins=Math.round(tr/60);
+   if(i===0)msg='Leave your location by '+short(by-tr)+' (about '+mins+' min '+mw+').';
+   else{const arr=free+tr;
+    if(arr<=by)msg='Leave between '+short(free)+' and '+short(by-tr)+' (about '+mins+' min '+mw+').';
+    else if(arr<=st.first){cls='warn';msg='Tight: leave at '+short(free)+', arrive about '+short(arr)+', just before the first pass at '+short(st.first)+'.'}
+    else{cls='bad';msg='Not enough time: leaving at '+short(free)+' you arrive about '+short(arr)+' and miss '+st.s.filter(s=>s.t<arr).map(s=>esc(s.u.name)).join(', ')+'.'}}}
+  h+='<div class="stop"><b>'+(i+1)+'. '+ICONS[pn.ic].e+' '+esc(pn.label||'Pin '+(st.pi+1))+'</b><div>Be there by '+short(by)+'. See '+st.s.map(s=>esc(s.u.name)+' at '+clock(s.t)).join(', ')+'.</div>'+(msg?'<div class="'+cls+'">'+msg+'</div>':'')+'</div>'});
+ O.innerHTML=h;req()}
 const ICONS={pin:{e:'📍',n:'Pin'},cheer:{e:'📣',n:'Cheer spot'},coffee:{e:'☕',n:'Coffee'},food:{e:'🥐',n:'Food'},water:{e:'💧',n:'Water'},car:{e:'🚗',n:'Parking'},train:{e:'🚆',n:'Train or tram'},toilet:{e:'🚻',n:'Toilets'},camera:{e:'📷',n:'Photos'},meet:{e:'🤝',n:'Meet-up'},flag:{e:'🏁',n:'Finish area'},star:{e:'⭐',n:'Favourite'}};
 function pinForm(pi){const pn=pi>=0?PINS[pi]:null;
  return '<div class="pf"><select id="pi" aria-label="Icon">'+Object.entries(ICONS).map(([k,v])=>'<option value="'+k+'"'+(pn&&pn.ic===k?' selected':'')+'>'+v.e+' '+v.n+'</option>').join('')+'</select><input type="text" id="pl" maxlength="40" placeholder="Label" aria-label="Pin label"><button id="ps">'+(pn?'Update':'Save pin')+'</button>'+(pn?'<button id="pd">Delete</button>':'')+'</div>'}
@@ -431,19 +538,21 @@ function recOf(u,d){const f=[],add=(k,v)=>f.push(k+':'+v);
  if(!d||u.course!==d.course||specKey(u.spec)!==specKey(d.spec))add('p',specKey(u.spec));
  const ov=[];u.paces.forEach((p,k)=>{if(Math.abs(p-u.base[k])>.01)ov.push(k+'-'+n2(p))});if(ov.length)add('x',ov.join('_'));
  if(u.hidden)add('h',1);
+ if(u.anch&&u.anch.length)add('a',u.anch.map(a=>Math.round(a.d)+'-'+hm6(a.t)).join('_'));if(u.pj&&u.pj!=='carry')add('j',u.pj);
  if(!d)add('i',u.ci);
  return f.join(',')}
 function stateQuery(){const q=[];
  if(baseId!=='liberty')q.push('b='+baseId);
- if(Math.abs(T-DT)>=1)q.push('t='+hm6(T));
+ if(live)q.push('now=1');else if(Math.abs(T-DT)>=1)q.push('t='+hm6(T));
  const ids=[...new Set([...DEF.map(d=>d.id),...RUN.map(u=>u.id)])].sort((a,b)=>a-b);
  for(const id of ids){const u=RUN.find(r=>r.id===id),d=DEF.find(x=>x.id===id);
   if(!u){if(d)q.push('r'+id+'=-');continue}
   const rec=recOf(u,d);if(rec)q.push('r'+id+'='+rec.replace(/%/g,'%25'))}
  for(const pn of PINS){const ll=unproj(pn.x,pn.y);q.push('pin='+[ll[0].toFixed(5),ll[1].toFixed(5),pn.ic,encodeURIComponent(pn.label)].join(',').replace(/%/g,'%25'))}
+ if(SEL.length)q.push('see='+[...SEL].sort().join(','));if(PM!=='walk')q.push('tm='+PM);if(EA!==5)q.push('ea='+EA);if(FROMME)q.push('fm=1');
  return q.length?'v=1&'+q.join('&'):''}
 let su=0;
-function syncURL(){clearTimeout(su);su=setTimeout(()=>{try{const q=stateQuery();history.replaceState(null,'',location.pathname+(q?'?'+q:'')+location.hash)}catch(e){}},250)}
+function syncURL(){clearTimeout(su);su=setTimeout(()=>{try{renderPlanner()}catch(e){}try{const q=stateQuery();history.replaceState(null,'',location.pathname+(q?'?'+q:'')+location.hash)}catch(e){}},250)}
 function buildRun(id,f,d){
  const course=f.c==='h'?'half':f.c==='f'?'full':d?d.course:null;if(!course)return null;
  const start=p6(f.s)??(d?d.start:null);if(start===null)return null;
@@ -452,7 +561,9 @@ function buildRun(id,f,d){
  const u={id,course,start,name:f.n!==undefined?(dec(f.n)||'Runner'):d?d.name:'Runner '+(id+1),ci:f.i!==undefined&&+f.i>=0?+f.i%6:d?d.ci:null,def:d&&d.course===course?d.spec:spec};
  if(!setSpec(u,spec))return null;
  if(f.x)for(const pr of f.x.split('_')){const [k,p]=pr.split('-').map(Number);if(Number.isInteger(k)&&k>=0&&k<u.paces.length&&p>=120&&p<=1200){u.paces[k]=p;u.custom=true}}
- if(u.custom)computeT(u);
+ if(f.a)u.anch=f.a.split('_').map(s=>{const z=s.split('-');return{d:+z[0],t:p6(z[1])}}).filter(a=>isFinite(a.d)&&a.d>=0&&a.d<=C[course].L&&a.t!==null).sort((a,b)=>a.d-b.d);
+ if(f.j==='recent'||f.j==='target')u.pj=f.j;
+ if(u.custom||(u.anch&&u.anch.length))computeT(u);
  u.hidden=f.h==='1';return u}
 function loadState(){
  const P=new URLSearchParams(location.search),recs={};
@@ -465,13 +576,18 @@ function loadState(){
  if(!RUN.length)for(const d of DEF)RUN.push(buildRun(d.id,{},d));
  nid=Math.max(...RUN.map(u=>u.id),...DEF.map(d=>d.id))+1;
  const b=P.get('b');if(BASES.some(x=>x.id===b))baseId=b;
+ bootLive=P.get('now')==='1';
+ if(P.get('see'))SEL=P.get('see').split(',').filter(k=>/^[0-9]+\.[0-9]+\.[0-9]+$/.test(k));
+ if(SPD[P.get('tm')])PM=P.get('tm');
+ if(P.has('ea')){const e=+P.get('ea');if(P.get('ea')!==''&&e>=0&&e<=120)EA=Math.round(e)}
+ FROMME=P.get('fm')==='1';
  for(const v of P.getAll('pin')){const a=v.split(','),lat=+a[0],lon=+a[1];if(a.length<3||!isFinite(lat)||!isFinite(lon))continue;const xy=proj([lat,lon]);PINS.push({x:xy[0],y:xy[1],ic:ICONS[a[2]]?a[2]:'pin',label:dec(a[3]||'')})}
  rebuild();const t=p6(P.get('t'));T=Math.min(Math.max(t!==null?t:DT,t0),t1)}
 loadState();
 
 /* change race, copy link, reset */
 $('#rc').addEventListener('change',e=>{const u=cur(),c=e.target.value;if(c===u.course)return;
- const ratio=C[c].L/C[u.course].L,ui=u.ui,fin=u.total*ratio;u.course=c;
+ const ratio=C[c].L/C[u.course].L,ui=u.ui,fin=u.total*ratio;u.course=c;u.anch=[];
  if(!setSpec(u,{kind:'plan',p0:ui.p0,fin,k:ui.k}))setSpec(u,{kind:'plan',p0:fin/(C[c].L/1000),fin,k:1});
  u.def=u.spec;refreshAll()});
 $('#share').onclick=async()=>{const q=stateQuery(),url=location.href.split(/[?#]/)[0]+(q?'?'+q:'');let ok=false;
@@ -480,10 +596,21 @@ $('#share').onclick=async()=>{const q=stateQuery(),url=location.href.split(/[?#]
  const b=$('#share');b.textContent=ok?'Link copied':'Copy share link';setTimeout(()=>b.textContent='Copy share link',1800)};
 $('#rall').onclick=()=>{location.href=location.href.split(/[?#]/)[0]};
 
+/* GPS, Now mode, spectator planner */
+$('#zg').onclick=()=>setGPS(watchId===null);
+$('#now').onclick=()=>setLive(!live);
+$('#sp-list').addEventListener('change',e=>{const k=e.target.dataset.k;if(!k)return;SEL=e.target.checked?[...SEL,k]:SEL.filter(x=>x!==k);renderPlanner();syncURL()});
+$('#pm').addEventListener('change',e=>{PM=e.target.value;renderPlanner();syncURL()});
+$('#ea').addEventListener('input',e=>{const v=+e.target.value;if(e.target.value.trim()!==''&&v>=0&&v<=120){EA=Math.round(v);renderPlanner();syncURL()}});
+$('#fm').addEventListener('change',e=>{FROMME=e.target.checked;if(FROMME&&watchId===null)setGPS(true);renderPlanner();syncURL()});
+$('#pm').value=PM;$('#ea').value=EA;$('#fm').checked=FROMME;renderPlanner();
+$('#pj').addEventListener('change',e=>{const u=cur();u.pj=e.target.value;computeT(u);afterCorrection()});
+$('#anchors').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const u=cur();u.anch=(u.anch||[]).filter(a=>!(Math.round(a.d)===+b.dataset.d&&Math.round(a.t)===+b.dataset.t));computeT(u);afterCorrection()});
+
 
 
 refreshAll();
-setBase(baseId);
+setBase(baseId);if(bootLive)setLive(true);
 matchMedia('(prefers-color-scheme:dark)').addEventListener('change',()=>{req();drawElev()});
 </script>
 </body>
