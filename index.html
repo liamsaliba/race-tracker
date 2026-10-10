@@ -29,6 +29,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
 .spot[hidden]{display:none}
 .spot .x{position:absolute;top:2px;right:4px;border:0;background:none;padding:4px 8px;font-size:16px}
 .spot p{margin:0 0 6px;padding-right:20px;font-weight:600}
+.pf{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 6px}.pf select{width:auto;margin:0}.pf input{flex:1;min-width:110px;margin:0}
 .spot ul{margin:0 0 6px;padding:0;list-style:none}
 .spot li{margin:2px 0}
 .spot li button{border:0;background:none;padding:0;text-decoration:underline;text-underline-offset:2px;font-weight:600}
@@ -267,6 +268,9 @@ function draw(){
  tag('Start',sx(C.full.X[0]),sy(C.full.Y[0])+18,g('--ink'));tag('Finish',sx(C.half.X[C.half.n-1]),sy(C.half.Y[C.half.n-1])+18,g('--ink'));
  if(spot){const x=sx(spot.x),y=sy(spot.y);ctx.setLineDash([5,4]);ctx.strokeStyle=g('--ink');ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(x,y,Math.max(4,spot.R*V.s),0,7);ctx.stroke();ctx.setLineDash([]);
   ctx.fillStyle=g('--ink');ctx.beginPath();ctx.arc(x,y,3,0,7);ctx.fill()}
+ for(const pn of PINS){const x=sx(pn.x),y=sy(pn.y);ctx.fillStyle=g('--chip');ctx.strokeStyle=g('--ink');ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(x,y,13,0,7);ctx.fill();ctx.stroke();
+  ctx.font='15px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=g('--ink');ctx.fillText((ICONS[pn.ic]||ICONS.pin).e,x,y+1);
+  if(pn.label)tag(pn.label,x,y+27,g('--ink'))}
  pos.forEach(({u,p},n)=>{const x=sx(p.x),y=sy(p.y),c=g(colOf(u));ctx.lineWidth=3;ctx.strokeStyle='#fff';ctx.fillStyle=p.st==='pre'?g('--chip'):c;
   ctx.beginPath();ctx.arc(x,y,8,0,7);ctx.fill();ctx.stroke();if(p.st==='pre'){ctx.strokeStyle=c;ctx.lineWidth=2;ctx.stroke()}
   tag(u.name,x,y-20-(n%3)*20,c)})}
@@ -356,17 +360,23 @@ $('#add').onclick=()=>{const s=parseClock($('#as').value),f=parseClock($('#af').
  m.textContent=avg<180?'Added. That works out faster than 3:00/km, so check the times.':`Added at an even ${mss(avg)}/km.`};
 
 /* spot pin */
-function setSpot(x,y){
- const R=Math.max(50,22/V.s);spot={x,y,R};
+function setSpot(x,y,pi=-1){
+ const R=Math.max(50,22/V.s);spot={x,y,R,pi};
  const ll=unproj(x,y);let h='<button class="x" aria-label="Close" id="sx">&times;</button><p>Passes within '+Math.round(R)+' m of the pin</p>';
  for(const u of RUN.filter(u=>!u.hidden)){const c=C[u.course],gs=[];let q=null;
   for(let i=0;i<c.n;i++){const d=Math.hypot(c.X[i]-x,c.Y[i]-y);
    if(d<R){if(!q)q={a:i,b:i,best:i,bd:d};else{q.b=i;if(d<q.bd){q.bd=d;q.best=i}}}else if(q){gs.push(q);q=null}}
   if(q)gs.push(q);
   h+=`<div><span class="dot" style="--c:var(${colOf(u)})"></span><b class="nmx"></b></div><ul>`+(gs.length?gs.map(q=>`<li><button data-t="${u.T[q.best]}">${clock(u.T[q.best])}</button> at km ${(q.best*c.step/1000).toFixed(1)}, in range ${short(u.T[q.a])} to ${short(u.T[q.b])}</li>`).join(''):'<li>Not on this route</li>')+'</ul>'}
+ h+=pinForm(pi);
  h+=`<a href="https://www.google.com/maps/search/?api=1&query=${ll[0].toFixed(5)},${ll[1].toFixed(5)}" target="_blank" rel="noopener">Open pin in Maps</a>`;
- const s=$('#spot');s.innerHTML=h;s.hidden=false;[...s.querySelectorAll('.nmx')].forEach((el,i)=>el.textContent=RUN.filter(u=>!u.hidden)[i].name);req()}
-$('#spot').addEventListener('click',e=>{if(e.target.id==='sx'){spot=null;$('#spot').hidden=true;req()}const t=e.target.dataset.t;if(t){T=+t;update();syncURL()}});
+ const s=$('#spot');s.innerHTML=h;s.hidden=false;[...s.querySelectorAll('.nmx')].forEach((el,i)=>el.textContent=RUN.filter(u=>!u.hidden)[i].name);if(pi>=0)$('#pl').value=PINS[pi].label;req()}
+$('#spot').addEventListener('click',e=>{if(e.target.id==='sx'){spot=null;$('#spot').hidden=true;req()}
+ if(e.target.id==='ps'){const ic=$('#pi').value,label=$('#pl').value.trim();
+  if(spot.pi>=0)Object.assign(PINS[spot.pi],{ic,label});
+  else{const ll=unproj(spot.x,spot.y).map(v=>+v.toFixed(5)),xy=proj(ll);PINS.push({x:xy[0],y:xy[1],ic,label});spot.pi=PINS.length-1}
+  syncURL();setSpot(PINS[spot.pi].x,PINS[spot.pi].y,spot.pi)}
+ if(e.target.id==='pd'){PINS.splice(spot.pi,1);syncURL();spot=null;$('#spot').hidden=true;req()}const t=e.target.dataset.t;if(t){T=+t;update();syncURL()}});
 
 /* map gestures */
 const ptrs=new Map();let moved=0;
@@ -376,7 +386,7 @@ cv.addEventListener('pointermove',e=>{const p=ptrs.get(e.pointerId);if(!p)return
  else if(ptrs.size===2){const o=[...ptrs].find(([k])=>k!==e.pointerId)[1];moved+=99;
   zoomAt(Math.hypot(e.clientX-o[0],e.clientY-o[1])/(Math.hypot(p[0]-o[0],p[1]-o[1])||1),(e.clientX+o[0])/2,(e.clientY+o[1])/2)}
  ptrs.set(e.pointerId,[e.clientX,e.clientY])});
-cv.addEventListener('pointerup',e=>{if(ptrs.size===1&&moved<6){const w=world(e.clientX,e.clientY);setSpot(w[0],w[1])}ptrs.delete(e.pointerId)});
+cv.addEventListener('pointerup',e=>{if(ptrs.size===1&&moved<6){const w=world(e.clientX,e.clientY),i=PINS.findIndex(p=>Math.hypot(p.x-w[0],p.y-w[1])*V.s<16);if(i>=0)setSpot(PINS[i].x,PINS[i].y,i);else setSpot(w[0],w[1])}ptrs.delete(e.pointerId)});
 cv.addEventListener('pointercancel',e=>ptrs.delete(e.pointerId));
 cv.addEventListener('wheel',e=>{e.preventDefault();zoomAt(Math.exp(-e.deltaY*.0015),e.clientX,e.clientY)},{passive:false});
 const mid=()=>{const r=cv.getBoundingClientRect();return[r.left+W/2,r.top+H/2]};
@@ -402,6 +412,10 @@ const DEF=[
  {id:1,ci:1,name:'Tracy',course:'full',start:D.full.start,spec:{kind:'gpx'}},
  {id:2,ci:2,name:'Eluid',course:'full',start:parseClock('06:15:00'),spec:{kind:'plan',p0:7800/(C.full.L/1000),fin:7800,k:1}}];
 const DT=parseClock('06:45:00');
+const PINS=[];
+const ICONS={pin:{e:'📍',n:'Pin'},cheer:{e:'📣',n:'Cheer spot'},coffee:{e:'☕',n:'Coffee'},food:{e:'🥐',n:'Food'},water:{e:'💧',n:'Water'},car:{e:'🚗',n:'Parking'},train:{e:'🚆',n:'Train or tram'},toilet:{e:'🚻',n:'Toilets'},camera:{e:'📷',n:'Photos'},meet:{e:'🤝',n:'Meet-up'},flag:{e:'🏁',n:'Finish area'},star:{e:'⭐',n:'Favourite'}};
+function pinForm(pi){const pn=pi>=0?PINS[pi]:null;
+ return '<div class="pf"><select id="pi" aria-label="Icon">'+Object.entries(ICONS).map(([k,v])=>'<option value="'+k+'"'+(pn&&pn.ic===k?' selected':'')+'>'+v.e+' '+v.n+'</option>').join('')+'</select><input type="text" id="pl" maxlength="40" placeholder="Label" aria-label="Pin label"><button id="ps">'+(pn?'Update':'Save pin')+'</button>'+(pn?'<button id="pd">Delete</button>':'')+'</div>'}
 const n2=x=>String(+(+x).toFixed(2));
 const specKey=s=>s.kind==='gpx'?'g':[n2(s.p0),n2(s.fin),n2(s.k)].join('_');
 const hm6=t=>f24.format(new Date(t*1000)).replace(/:/g,'');
@@ -426,6 +440,7 @@ function stateQuery(){const q=[];
  for(const id of ids){const u=RUN.find(r=>r.id===id),d=DEF.find(x=>x.id===id);
   if(!u){if(d)q.push('r'+id+'=-');continue}
   const rec=recOf(u,d);if(rec)q.push('r'+id+'='+rec.replace(/%/g,'%25'))}
+ for(const pn of PINS){const ll=unproj(pn.x,pn.y);q.push('pin='+[ll[0].toFixed(5),ll[1].toFixed(5),pn.ic,encodeURIComponent(pn.label)].join(',').replace(/%/g,'%25'))}
  return q.length?'v=1&'+q.join('&'):''}
 let su=0;
 function syncURL(){clearTimeout(su);su=setTimeout(()=>{try{const q=stateQuery();history.replaceState(null,'',location.pathname+(q?'?'+q:'')+location.hash)}catch(e){}},250)}
@@ -450,6 +465,7 @@ function loadState(){
  if(!RUN.length)for(const d of DEF)RUN.push(buildRun(d.id,{},d));
  nid=Math.max(...RUN.map(u=>u.id),...DEF.map(d=>d.id))+1;
  const b=P.get('b');if(BASES.some(x=>x.id===b))baseId=b;
+ for(const v of P.getAll('pin')){const a=v.split(','),lat=+a[0],lon=+a[1];if(a.length<3||!isFinite(lat)||!isFinite(lon))continue;const xy=proj([lat,lon]);PINS.push({x:xy[0],y:xy[1],ic:ICONS[a[2]]?a[2]:'pin',label:dec(a[3]||'')})}
  rebuild();const t=p6(P.get('t'));T=Math.min(Math.max(t!==null?t:DT,t0),t1)}
 loadState();
 
